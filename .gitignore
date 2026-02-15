@@ -44,5 +44,5 @@ app-example
 
 
 myenv
-main.py
+*.py
 *.exe
