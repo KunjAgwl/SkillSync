@@ -1,18 +1,19 @@
 @echo off
 echo Fixing git configuration...
 
-echo 1. Removing main.py from git tracking (keeping local file)...
-git rm --cached main.py
+echo 2. Removing potential SkillSync submodule tracking...
+git rm --cached SkillSync
 
-echo 2. Removing nested .git directory in SkillSync/SkillSync...
+echo 3. Removing nested .git directory in SkillSync/SkillSync...
 rmdir /s /q "SkillSync\SkillSync\.git"
+if exist "SkillSync\.git" rmdir /s /q "SkillSync\.git"
 
 echo.
 echo ==========================================
 echo Fix applied. Now please run these commands:
 echo.
-echo git add .
-echo git commit -m "Fix project structure and remove secrets"
-echo git push
+echo 1. git add .
+echo 2. git commit -m "Fix project structure and remove secrets"
+echo 3. git push
 echo ==========================================
 pause
