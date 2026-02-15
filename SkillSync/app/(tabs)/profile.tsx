@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import { JobCard, JobMatch } from '@/components/JobCard';
 
 export default function ProfileScreen() {
     const colorScheme = useColorScheme();
@@ -14,6 +15,9 @@ export default function ProfileScreen() {
 
     const [uploading, setUploading] = useState(false);
     const [resumeUploaded, setResumeUploaded] = useState(false);
+    const [extractedSkills, setExtractedSkills] = useState<string[]>([]);
+    const [matches, setMatches] = useState<JobMatch[]>([]);
+
     const { signOut, user } = useAuth();
     const router = useRouter();
 
@@ -30,13 +34,25 @@ export default function ProfileScreen() {
 
             const file = result.assets[0];
             setUploading(true);
+            setExtractedSkills([]);
+            setMatches([]);
+
             try {
-                await api.uploadResume(file.uri, file.name, file.mimeType || 'application/pdf');
+                const response = await api.uploadResume(file.uri, file.name, file.mimeType || 'application/pdf');
                 setResumeUploaded(true);
+
+                if (response.extracted_skills) {
+                    setExtractedSkills(response.extracted_skills);
+                }
+
+                if (response.matches) {
+                    setMatches(response.matches);
+                }
+
                 if (Platform.OS === 'web') {
                     window.alert('Resume uploaded successfully!');
                 } else {
-                    Alert.alert('Success', 'Resume uploaded successfully! Go to Explore to see your matches.');
+                    Alert.alert('Success', 'Resume uploaded! Scroll down to see your skills and matches.');
                 }
             } catch (error: any) {
                 if (Platform.OS === 'web') {
@@ -115,6 +131,36 @@ export default function ProfileScreen() {
                     Supported: PDF, DOCX (max 10MB)
                 </Text>
             </View>
+
+            {/* Extracted Skills Section */}
+            {extractedSkills.length > 0 && (
+                <>
+                    <View style={styles.separator} />
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Extracted Skills</Text>
+                        <View style={styles.skillTags}>
+                            {extractedSkills.map((skill, idx) => (
+                                <View key={idx} style={[styles.skillTag, { backgroundColor: theme.tint + '15', borderColor: theme.tint + '30' }]}>
+                                    <Text style={[styles.skillTagText, { color: theme.tint }]}>{skill}</Text>
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                </>
+            )}
+
+            {/* Matches Section */}
+            {matches.length > 0 && (
+                <>
+                    <View style={styles.separator} />
+                    <View style={styles.section}>
+                        <Text style={[styles.sectionTitle, { color: theme.text }]}>Best Matches</Text>
+                        {matches.map((job) => (
+                            <JobCard key={job.job_id} item={job} />
+                        ))}
+                    </View>
+                </>
+            )}
 
             <View style={styles.separator} />
 
@@ -205,5 +251,20 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 8,
         textAlign: 'center',
+    },
+    skillTags: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    skillTag: {
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+    },
+    skillTagText: {
+        fontSize: 14,
+        fontWeight: '500',
     },
 });

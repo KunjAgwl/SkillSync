@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 
@@ -27,14 +28,14 @@ func main() {
 	// 1️⃣ Get jobs without skills
 	rows, err := database.Pool.Query(
 		context.Background(),
-		`SELECT id, description FROM jobs
-		 WHERE id NOT IN (SELECT DISTINCT job_id FROM job_skills)`
+		`SELECT id, description FROM jobs`,
 	)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer rows.Close()
 
+	count := 0
 	for rows.Next() {
 		var jobID int
 		var desc string
@@ -45,6 +46,9 @@ func main() {
 
 		// 2️⃣ Extract skills
 		found := skills.Extract(desc)
+		if len(found) > 0 {
+			log.Printf("Job %d: Found %d skills: %v", jobID, len(found), found)
+		}
 
 		// 3️⃣ Store skills
 		for _, skill := range found {
@@ -56,9 +60,10 @@ func main() {
 
 			_ = database.InsertJobSkill(jobID, skillID)
 		}
+		count++
 	}
 
-	log.Println("Skill extraction completed")
+	log.Printf("Skill extraction completed. Processed %d jobs.", count)
 }
 
 /*
@@ -70,4 +75,3 @@ Explanation of SQL Queries in skills-worker/main.go:
    - This prevents the worker from re-processing jobs that have already been analyzed.
    - It effectively acts as a queue: Jobs with 0 skills associated are "todo".
 */
-

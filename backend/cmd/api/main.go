@@ -15,6 +15,7 @@ import (
 	"SkillSync/internal/embedding"
 	"SkillSync/internal/match"
 	"SkillSync/internal/resume"
+	"SkillSync/internal/skills"
 )
 
 type RegisterRequest struct {
@@ -219,8 +220,33 @@ func main() {
 		log.Printf("Embedding saved for user %d", claims.UserID)
 		// ---------------------------------------------
 
-		json.NewEncoder(w).Encode(map[string]string{
-			"message": "Resume uploaded and processed successfully",
+		// --- EXTRACT SKILLS ---
+		log.Printf("Extracting skills for user %d...", claims.UserID)
+		extractedSkills := skills.Extract(resumeText)
+		for _, skillName := range extractedSkills {
+			skillID, err := database.GetOrCreateSkill(skillName)
+			if err != nil {
+				log.Printf("Failed to get/create skill %s: %v", skillName, err)
+				continue
+			}
+			err = database.InsertUserSkill(claims.UserID, skillID)
+			if err != nil {
+				log.Printf("Failed to link skill %s to user: %v", skillName, err)
+			}
+		}
+
+		// --- FIND MATCHES ---
+		log.Printf("Finding job matches for user %d...", claims.UserID)
+		matches, err := match.MatchJobs(database, claims.UserID)
+		if err != nil {
+			log.Printf("Match error: %v", err)
+			// Proceeding with empty matches if error occurs to not block the upload success
+		}
+
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"message":          "Resume uploaded and processed successfully",
+			"extracted_skills": extractedSkills,
+			"matches":          matches,
 		})
 	}))
 

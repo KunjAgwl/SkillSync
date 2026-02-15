@@ -1,23 +1,11 @@
-import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, Linking, RefreshControl } from 'react-native';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
 import { useEffect, useState, useCallback } from 'react';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { api } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-
-type JobMatch = {
-  job_id: number;
-  title: string;
-  company: string;
-  location: string;
-  description: string;
-  apply_url: string;
-  skill_score: number;
-  embed_score: number;
-  match_score: number;
-  missing_skills: string[] | null;
-};
+import { JobCard, JobMatch } from '@/components/JobCard';
 
 export default function MatchesScreen() {
   const [matches, setMatches] = useState<JobMatch[]>([]);
@@ -50,55 +38,9 @@ export default function MatchesScreen() {
     loadMatches();
   }, [loadMatches]);
 
-  const getScoreColor = (score: number) => {
-    if (score >= 0.7) return '#22c55e';
-    if (score >= 0.4) return '#f59e0b';
-    return '#ef4444';
-  };
 
   const renderItem = ({ item }: { item: JobMatch }) => (
-    <View style={[styles.card, { backgroundColor: theme.background, borderColor: theme.icon + '40' }]}>
-      <View style={styles.header}>
-        <Text style={[styles.jobTitle, { color: theme.text }]}>{item.title}</Text>
-        <View style={[styles.badge, { backgroundColor: getScoreColor(item.match_score) }]}>
-          <Text style={styles.badgeText}>{Math.round(item.match_score * 100)}%</Text>
-        </View>
-      </View>
-
-      <Text style={[styles.company, { color: theme.icon }]}>
-        {item.company} • {item.location}
-      </Text>
-
-      <Text style={[styles.description, { color: theme.text }]} numberOfLines={3}>
-        {item.description}
-      </Text>
-
-      {item.missing_skills && item.missing_skills.length > 0 && (
-        <View style={styles.skillsContainer}>
-          <Text style={[styles.skillsLabel, { color: theme.icon }]}>Skills to learn:</Text>
-          <View style={styles.skillTags}>
-            {item.missing_skills.slice(0, 5).map((skill, idx) => (
-              <View key={idx} style={[styles.skillTag, { backgroundColor: theme.tint + '20', borderColor: theme.tint + '40' }]}>
-                <Text style={[styles.skillTagText, { color: theme.tint }]}>{skill}</Text>
-              </View>
-            ))}
-            {item.missing_skills.length > 5 && (
-              <Text style={[styles.moreSkills, { color: theme.icon }]}>+{item.missing_skills.length - 5} more</Text>
-            )}
-          </View>
-        </View>
-      )}
-
-      {item.apply_url ? (
-        <TouchableOpacity
-          style={[styles.applyButton, { backgroundColor: theme.tint }]}
-          onPress={() => Linking.openURL(item.apply_url)}
-        >
-          <Text style={styles.applyText}>Apply Now</Text>
-          <IconSymbol size={14} name="paperplane.fill" color="#fff" />
-        </TouchableOpacity>
-      ) : null}
-    </View>
+    <JobCard item={item} />
   );
 
   return (
