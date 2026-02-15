@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS skills (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS job_skills (
+    job_id INT NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+    skill_id INT NOT NULL REFERENCES skills(id) ON DELETE CASCADE,
+
+    PRIMARY KEY (job_id, skill_id)
+);
+
+
